@@ -13,10 +13,8 @@ import numpy as np
 import csv
 
 def read_data(filename):
-    """
-        Read data from file.
-        Will also return header if header=True
-    """
+    # Read data from file.
+ 
     data = []
     with open(filename, 'rt') as csvfile:
         spamreader = csv.reader(csvfile, delimiter = ' ')
@@ -26,21 +24,20 @@ def read_data(filename):
 
 
 def load_graphs(filename):
-    """
-        Loads graphs from file
-    """
+    # Loads graphs from file
+
     data = read_data(filename)
     graph = Graph()
     for line in data:
             if line[0] == 'v':
-                v = Vertex(id = int(line[1]))
+                v = Vertex(id = line[1])
                 graph.add_vertex(vertex = v)  
             elif line[0] == 'e':
                 e = Edge(
-                         from_vertex = graph.get_vertex(id = int(line[1])), 
-                         to_vertex = graph.get_vertex(id = int(line[2])),
-                         weight = int(line[3]))
-                graph.add_edge(edge = e) # type: ignore
+                         from_vertex = graph.get_vertex(id = line[1]), 
+                         to_vertex = graph.get_vertex(id = line[2]),
+                         weight = line[3])
+                graph.add_edge(edge = e) 
     return graph
 
 class Cluster:
@@ -61,17 +58,21 @@ class Edge:
 		self.to_vertex = to_vertex
 
 	def connected_to(self, vertex):
-		return vertex.id == self.from_vertex.id or \
-	    	vertex.id == self.to_vertex.id
+		return (vertex.id == self.from_vertex.id or
+		vertex.id == self.to_vertex.id)
+	
 
 	def get_edge_info(self):
-		info = [self.from_vertex.get_vertex_info(),
-					self.to_vertex.get_vertex_info(),
+		info = [self.from_vertex.id,
+					self.to_vertex.id,
 					self.weight]
 		return info
+	
+	def get_weight(self):
+		return self.weight
 
 class Graph:
-	edges, vertices = [], []
+	# edges, vertices = [], []
 	def __init__(self):
 		self.edges = []
 		self.vertices = []
@@ -92,27 +93,31 @@ class Graph:
 		adj_edges = []
 		for e in self.edges:
 			if e.connected_to(vertex):
-				adj_edges.append(e)
+				adj_edges.append(e)	
 		return adj_edges
 
-	def get_num_of_vertex(self):
+	def get_num_of_vertices(self):
 		return len(self.vertices)
 
-	def get_weight(self, from_vertex, to_vertex):
+	def get_weight(self, from_vertex_id, to_vertex_id):
 		for e in self.edges:
-			if e.from_vertex.id == from_vertex and \
-				e.to_vertex.id == to_vertex:
-				return e.weight
+			if e.from_vertex.id == from_vertex_id and e.to_vertex.id == to_vertex_id:
+				return e.get_weight()
 
 def main():
 	graph = load_graphs('cube_data.txt')
-	vertex = Vertex(1)
-	test = graph.adjacent_edges(vertex)  # type: ignore
+
+	vertex = Vertex(id = '1')
+	print(vertex.id)
+
+	test = graph.adjacent_edges(vertex)  
+
+	print(test)
+
 	for edge in test:
 		print(edge.get_edge_info())
-	print(graph.get_num_of_vertex())
-	print(graph.get_weight(0, 1))
-
+	# print(graph.get_num_of_vertices())
+	# print(graph.get_weight(0, 1))
 
 if __name__ == "__main__":
 	main()
