@@ -40,10 +40,6 @@ def load_graphs(filename):
                 graph.add_edge(edge = e) 
     return graph
 
-class Cluster:
-	pass
-
-
 class Vertex:
 	def __init__(self, id):
 		self.id = id # id của 1 đỉnh
@@ -61,21 +57,19 @@ class Edge:
 		return (vertex.id == self.from_vertex.id or
 		vertex.id == self.to_vertex.id)
 	
-
 	def get_edge_info(self):
 		info = [self.from_vertex.id,
 					self.to_vertex.id,
 					self.weight]
 		return info
-	
-	def get_weight(self):
-		return self.weight
+
 
 class Graph:
 	# edges, vertices = [], []
 	def __init__(self):
 		self.edges = []
 		self.vertices = []
+		self.weights = {} # a dictionary to store weight(value), edge(key_v - (from, to_v))
 
 	def add_vertex(self, vertex):
 		self.vertices.append(vertex)
@@ -95,6 +89,16 @@ class Graph:
 			if e.connected_to(vertex):
 				adj_edges.append(e)	
 		return adj_edges
+	
+	def adjacent_vertices(self, vertex):
+		adj_vertices = []
+		adj_e = self.adjacent_edges(vertex)
+		for e in adj_e:
+			if e.from_vertex.id == vertex.id:
+				adj_vertices.append(e.to_vertex)
+			else: 
+				adj_vertices.append(e.from_vertex)
+		return adj_vertices
 
 	def get_num_of_vertices(self):
 		return len(self.vertices)
@@ -104,20 +108,28 @@ class Graph:
 			if e.from_vertex.id == from_vertex_id and e.to_vertex.id == to_vertex_id:
 				return e.get_weight()
 
+	def create_dict_of_weights(self): 
+
+	# Create a dictionary with key is vertices of an edge and value is edge's weight
+
+		for e in self.edges:
+			self.weights[(e.from_vertex, e.to_vertex)] = e.weight
+			self.weights[(e.to_vertex, e.from_vertex)] = e.weight
+		return self.weights
+
+class Cluster(Graph):
+	def __init__(self, id) -> None:
+		Graph.__init__(self)
+		self.id = id
+
+	
+			
+
+
 def main():
 	graph = load_graphs('cube_data.txt')
 
-	vertex = Vertex(id = '1')
-	print(vertex.id)
-
-	test = graph.adjacent_edges(vertex)  
-
-	print(test)
-
-	for edge in test:
-		print(edge.get_edge_info())
-	# print(graph.get_num_of_vertices())
-	# print(graph.get_weight(0, 1))
+	
 
 if __name__ == "__main__":
 	main()
