@@ -36,12 +36,12 @@ def load_graphs(filename):
                 e = Edge(
                          from_vertex = graph.get_vertex(id = line[1]), 
                          to_vertex = graph.get_vertex(id = line[2]),
-                         weight = line[3])
+                         weight = int(line[3]))
                 graph.add_edge(edge = e) 
     return graph
 
 class Vertex:
-	def __init__(self, id):
+	def __init__(self, id: str):
 		self.id = id # id của 1 đỉnh
 	def get_vertex_info(self):
 		return self.id
@@ -70,6 +70,9 @@ class Graph:
 		self.edges = []
 		self.vertices = []
 		self.weights = {} # a dictionary to store weight(value), edge(key_v - (from, to_v))
+		for e in self.edges:
+			self.weights[(e.from_vertex, e.to_vertex)] = e.weight
+			self.weights[(e.to_vertex, e.from_vertex)] = e.weight
 
 	def add_vertex(self, vertex):
 		self.vertices.append(vertex)
@@ -100,21 +103,18 @@ class Graph:
 				adj_vertices.append(e.from_vertex)
 		return adj_vertices
 
-	def get_num_of_vertices(self):
-		return len(self.vertices)
-
-	def get_weight(self, from_vertex_id, to_vertex_id):
+	def get_weight_with_from_to(self, from_vertex_id, to_vertex_id):
 		for e in self.edges:
 			if e.from_vertex.id == from_vertex_id and e.to_vertex.id == to_vertex_id:
 				return e.get_weight()
 
-	def create_dict_of_weights(self): 
+	def get_dict_of_weights(self): 
 
 	# Create a dictionary with key is vertices of an edge and value is edge's weight
 
 		for e in self.edges:
-			self.weights[(e.from_vertex, e.to_vertex)] = e.weight
-			self.weights[(e.to_vertex, e.from_vertex)] = e.weight
+			self.weights[(e.from_vertex.id, e.to_vertex.id)] = e.weight
+			self.weights[(e.to_vertex.id, e.from_vertex.id)] = e.weight
 		return self.weights
 
 class Cluster(Graph):
@@ -122,14 +122,42 @@ class Cluster(Graph):
 		Graph.__init__(self)
 		self.id = id
 
-	
+	def get_cluster_weight(self, dict_weights):
+		weight = 0
+	#	self.weights = self.get_dict_of_weights()
+		for i in range(len(self.vertices)):
+			for j in range(i + 1, len(self.vertices)):
+				if (self.vertices[i].id, self.vertices[j].id) in dict_weights:
+					weight += dict_weights[(self.vertices[i].id, self.vertices[j].id)]
+		return weight*2
+
+	def get_vertex_weight(self, vertex, dict_weights):
+		weight = 0
+		for v in self.vertices:
+			if v.id == vertex.id:
+				for v1 in self.vertices:
+					if (v.id, v1.id) in dict_weights:
+						weight += dict_weights[(v.id, v1.id)]
+		return weight
 			
 
 
 def main():
 	graph = load_graphs('cube_data.txt')
-
-	
+	cluster = Cluster(Graph)
+	cluster.add_vertex(Vertex('2'))
+	cluster.add_vertex(Vertex('4'))
+	cluster.add_vertex(Vertex('6'))
+	cluster.add_edge(Edge(Vertex('2'), Vertex('4'), 3))
+	cluster.add_edge(Edge(Vertex('4'), Vertex('6'), 3))
+	# graph.get_dict_of_weights()
+	# cluster.get_dict_of_weights()
+	print(len(cluster.vertices))
+	dict_weights = cluster.get_dict_of_weights()
+	print(cluster.get_cluster_weight(dict_weights))
+	print(cluster.weights)
+	cube = Vertex('4')
+	print(cluster.get_vertex_weight(cube, dict_weights))
 
 if __name__ == "__main__":
 	main()
