@@ -43,10 +43,13 @@ def load_graphs(filename):
 class Vertex:
 	def __init__(self, id: str):
 		self.id = id # id của 1 đỉnh
-	def get_vertex_info(self):
-		return self.id
+		self.neighbors = []
+		self.weight = 0
+		self.density = 0
 
-
+	def add_neighbor(self, vertex):
+		self.neighbors.append(vertex)
+	
 class Edge:
 	def __init__(self, from_vertex, to_vertex, weight = 0):
 		self.weight = weight
@@ -57,28 +60,30 @@ class Edge:
 		return (vertex.id == self.from_vertex.id or
 		vertex.id == self.to_vertex.id)
 	
-	def get_edge_info(self):
-		info = [self.from_vertex.id,
-					self.to_vertex.id,
-					self.weight]
-		return info
-
-
-class Graph:
+class Graph: 
 	# edges, vertices = [], []
-	def __init__(self):
+	def __init__(self) -> None:
 		self.edges = []
 		self.vertices = []
-		self.weights = {} # a dictionary to store weight(value), edge(key_v - (from, to_v))
-		for e in self.edges:
-			self.weights[(e.from_vertex, e.to_vertex)] = e.weight
-			self.weights[(e.to_vertex, e.from_vertex)] = e.weight
+
+		self.weights = {} # a dictionary to store weight(value) correspond to its edge(key_v - (from, to_v))
+						
+		self.vertex_in_cluster = {}		# a dictionary with key is a vertex_id and value is its cluster_id it belongs to
 
 	def add_vertex(self, vertex):
 		self.vertices.append(vertex)
 
 	def add_edge(self, edge):
 		self.edges.append(edge)
+
+		edge.from_vertex.add_neighbor(edge.to_vertex)
+		edge.to_vertex.add_neighbor(edge.from_vertex)
+
+		edge.from_vertex.weight += edge.weight
+		edge.to_vertex.weight += edge.weight
+
+		self.weights[(edge.from_vertex.id, edge.to_vertex.id)] = edge.weight
+		self.weights[(edge.to_vertex.id, edge.from_vertex.id)] = edge.weight
 
 	def get_vertex(self, id):
 		for v in self.vertices:
@@ -111,16 +116,18 @@ class Graph:
 	def get_dict_of_weights(self): 
 
 	# Create a dictionary with key is vertices of an edge and value is edge's weight
-
-		for e in self.edges:
-			self.weights[(e.from_vertex.id, e.to_vertex.id)] = e.weight
-			self.weights[(e.to_vertex.id, e.from_vertex.id)] = e.weight
+		if not self.weights:
+			for e in self.edges:
+				self.weights[(e.from_vertex.id, e.to_vertex.id)] = e.weight
+				self.weights[(e.to_vertex.id, e.from_vertex.id)] = e.weight
 		return self.weights
 
 class Cluster(Graph):
 	def __init__(self, id) -> None:
 		Graph.__init__(self)
 		self.id = id
+
+	# dict_wegihts: a dictionary with key is an edge(from_vertex.id, to_vertex.id) and value is its weight
 
 	def get_cluster_weight(self, dict_weights):
 		weight = 0
@@ -152,12 +159,22 @@ def main():
 	cluster.add_edge(Edge(Vertex('4'), Vertex('6'), 3))
 	# graph.get_dict_of_weights()
 	# cluster.get_dict_of_weights()
-	print(len(cluster.vertices))
-	dict_weights = cluster.get_dict_of_weights()
-	print(cluster.get_cluster_weight(dict_weights))
-	print(cluster.weights)
-	cube = Vertex('4')
-	print(cluster.get_vertex_weight(cube, dict_weights))
+	
+	print(graph.weights)
+
+	 # Equation: dens(i) = multyplying the neighbor nod's total weight (Mj) by the edge weight(Wij) connecting to that neighbor +	
+	dens = []
+    # Calculate density for each vertex
+	for vertex in graph.vertices: 
+		for neighbor in vertex.neighbors:
+			vertex.density += graph.weights[(vertex.id, neighbor.id)] * neighbor.weight
+		dens.append(vertex)
+    # Sort the vertex base on density
+	dens = sorted(dens, key = lambda vertex: vertex.density, reverse = True)
+
+	print(len(dens), 'ok\n')
+	for v in dens:
+		print(v.id, v.density)
 
 if __name__ == "__main__":
 	main()
