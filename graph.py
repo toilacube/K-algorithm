@@ -44,8 +44,8 @@ class Vertex:
 	def __init__(self, id: str):
 		self.id = id # id của 1 đỉnh
 		self.neighbors = []
-		self.weight = 0
-		self.density = 0
+		self.weight = 0 # sum of weight of all edges contain this vertex
+		self.density = 0 # vertex density
 
 	def add_neighbor(self, vertex):
 		self.neighbors.append(vertex)
