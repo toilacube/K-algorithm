@@ -6,14 +6,19 @@
 # 								# to all the nodes within cluster i; j <= k && i <= N
 import random
 
+from Algorithm_2 import *
+
 def cost_function(a, b, c) -> float:
 	return 0
 
-def func_to_create_cluster(N, k): # có nên Giả sử  k = 2 để hoàn thành algorithm 1 trước ?????
-	cluster = [[]] * k
-	for i in range(N):
-		cluster[i] = i % 2
-	return cluster
+def func_to_create_cluster(graph, k): # có nên Giả sử  k = 2 để hoàn thành algorithm 1 trước ?????
+	# clusters = []
+	# for i in range(k):
+	# 	clusters.append(Cluster(id = i))
+	# for i in range(len(graph.vertices)):
+	# 	if i 
+	# return clusters
+	pass
 
 def K_Algorithm(graph, k, cluster = [[]]):
 # Line 1	
