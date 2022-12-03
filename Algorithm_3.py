@@ -28,11 +28,6 @@ def growCluster(graph, cluster, cluster_id, seed_id, growSize): # seed_id: belon
     #             nodeToCluWeight[node_id] += weight
     
     # return cluster
-    if not graph.weights:
-        graph_weights = graph.get_dict_of_weights()
-    else: 
-        graph_weights = graph.weight
-
     graph.vertex_in_cluster[seed_id] = cluster_id # assign the seed to the current cluster
 
     i = 0
@@ -47,8 +42,8 @@ def growCluster(graph, cluster, cluster_id, seed_id, growSize): # seed_id: belon
             if v not in cluster.vertices and graph.vertex_in_cluster[v.id] <= 0:
                 v_weight = 0
                 for cluster_v in cluster.vertices:    
-                    if (v.id, cluster_v.id) in graph_weights:
-                        v_weight += graph_weights[(v.id, cluster_v.id)]
+                    if (v.id, cluster_v.id) in graph.weights:
+                        v_weight += graph.weights[(v.id, cluster_v.id)]
                 if v_weight > max_weight:
                     max_vertex = v
                     max_weight = v_weight
@@ -56,7 +51,7 @@ def growCluster(graph, cluster, cluster_id, seed_id, growSize): # seed_id: belon
         if max_weight == 0:
             return cluster
         i += 1
-        if i >= growSize:
+        if i >= growSize: # Add the max_vertex to the cluster
             graph.vertex_in_cluster[max_vertex.id] = cluster_id
             cluster.add_vertex(max_vertex)
             break
