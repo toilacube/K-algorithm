@@ -9,6 +9,8 @@
 # weight = True
 # directed = False
 
+# does dictionary in this project can cause memory problem?
+
 import numpy as np
 import csv
 
@@ -62,13 +64,16 @@ class Edge:
 	
 class Graph: 
 	# edges, vertices = [], []
-	def __init__(self) -> None:
+	def __init__(self, K = 1) -> None:
 		self.edges = []
 		self.vertices = []
 
 		self.weights = {} # a dictionary to store weight(value) correspond to its edge(key_v - (from, to_v))
 						
 		self.vertex_in_cluster = {}		# a dictionary with key is a vertex_id and value is its cluster_id it belongs to
+
+		self.K = K # number of clusters
+		self.cluster = [] * K
 
 	def add_vertex(self, vertex):
 		self.vertices.append(vertex)
@@ -112,15 +117,6 @@ class Graph:
 		for e in self.edges:
 			if e.from_vertex.id == from_vertex_id and e.to_vertex.id == to_vertex_id:
 				return e.get_weight()
-
-	def get_dict_of_weights(self): 
-
-	# Create a dictionary with key is vertices of an edge and value is edge's weight
-		if not self.weights:
-			for e in self.edges:
-				self.weights[(e.from_vertex.id, e.to_vertex.id)] = e.weight
-				self.weights[(e.to_vertex.id, e.from_vertex.id)] = e.weight
-		return self.weights
 
 class Cluster(Graph):
 	def __init__(self, id) -> None:
@@ -175,6 +171,8 @@ def main():
 	print(len(dens), 'ok\n')
 	for v in dens:
 		print(v.id, v.density)
+	print(graph.weights[('1', '2')])
+	print(graph.vertices[0].neighbors[0].id)
 
 if __name__ == "__main__":
 	main()

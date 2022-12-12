@@ -1,66 +1,56 @@
-# N # number of vertices aka number of nodes
-# k # number of clusters
-# cluster = []*N # for i in range(N): cluster[i] = clusterID where node i belongs to
-# graph = [[] for i in range(N)] # adjacent list to store graph
-# W_ij = [[] for i in range(N)]*k # W_ij[i][j] = sum of weight from node j
-# 								# to all the nodes within cluster i; j <= k && i <= N
 import random
 
 from Algorithm_2 import *
 
-def cost_function(a, b, c) -> float:
+
+# for IIW(j, x, y): 1/(Wx - Wxj) + 1/(Wy + Wyj) - 1/Wx - 1/Wy
+'''
+	notation:
+	Wx = 2*(sum of all possible weights from cluster node)
+	Wxi = sum of weights from node i to all possible node in cluster x
+'''
+def cost_function(vertex, clus1, clus2):
+
 	return 0
 
-def func_to_create_cluster(graph, k): # có nên Giả sử  k = 2 để hoàn thành algorithm 1 trước ?????
-	# clusters = []
-	# for i in range(k):
-	# 	clusters.append(Cluster(id = i))
-	# for i in range(len(graph.vertices)):
-	# 	if i 
-	# return clusters
-	pass
-
-def K_Algorithm(graph, k, cluster = [[]]):
+def K_Algorithm(graph):
 # Line 1	
-	N = graph.get_num_of_vertex()
-	if cluster == None: # Null
-		cluster = func_to_create_cluster(N, k)
+	N = len(graph.vertices)
+	cluster = initialPartion(graph) # list of Clusters
 	changed = 0
+	cost_weight = {} # a dict with keys are K cluster_id, values are weights from a node to cluster i  
+
+	zero = {}
+	for i in range(graph.K):
+		zero[str(i)] = 0
+
+	# Create a list of N random unique values from 0 to N-1
+	sample = random.sample(range(0, N), N)
 
 	while True:
-	# Create N random unique values from 1 to N
-		sample = random.sample(range(0, N), N)
-# Line 5
+
 		for i in sample:
-			old = cluster[i] # cluster tiện tại của node i 
-			newpart = 1
 			bestdelta = float('inf')
-# Line 9	
-			Wi = [0] * k # Sum of internal weights in cluster i
-			Wij = [[0] * N] * k # Sum of weights from node j to nodes within cluster i: Wij[i][j]
+			new_clus_id = 1
+			v = graph.vertices[i]
+			old_clus_id = graph.vertex_in_cluster[v.id]
 
-			for clus in range(k):
-				pass
+			for neighbor in v.neighbors: # loop all connections of i
+				clus_id = graph.vertex_in_cluster[neighbor.id]
+				cost_weight[clus_id] += 2*graph.weights[(neighbor.id, v.id)]
 
-				
-# Line 10
-			for j in range(size(graph[i])):
-				(nodeId, weight) = graph[i][j]
-				x = cluster[nodeId]
-				
-				# Tính tổng số weight của node i tới từng các cluster
-				for one_weight in W:
-					one_weight[i] += 2*weight 
-# Line 14
-				for y in range(k):
-					d = cost_function(i, cluster[i], j)
-					if d < bestdelta:
-						bestdelta = d
-						newpart = j
-				if newpart != old:
-					changed +=1
-					cluster[i] = new # ?? Unknown variable new, maybe it is newpart
-		if changed <= 0:
+			for j in range(graph.K):
+				cost = cost_function(v,graph.vertex_in_cluster[v.id], j)
+				if cost < bestdelta:
+					bestdelta = cost
+					new_clus_id = j
+
+			if new_clus_id != old_clus_id: # if node i change its cluster
+				changed += 1
+				graph.vertex_in_cluster[v.id] = new_clus_id
+
+		if changed <= 0: # if all nodes dont change its cluster then finish
 			break
+
 	return cluster 
 

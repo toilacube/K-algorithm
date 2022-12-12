@@ -1,14 +1,7 @@
-
-# N # number of vertices aka number of nodes
-# k # number of clusters
-# cluster = []*N # for i in range(N): cluster[i] = clusterID where node i belongs to
-# graph = [[] for i in range(N)] # adjacent list to store graph
-# all_weight = [[] for i in range(k)] # all_weight[i][j] = sum of weight from node j
-# 								# to all the nodes within cluster i
-
 from Algorithm_3 import *
+import random
 
-def sorted_base_on_density(graph):
+def sorted_base_on_density(graph) -> list: 
 
     # Equation: dens(i) = multyplying the neighbor nod's total weight (Mj) by the edge weight(Wij) connecting to that neighbor +
     dens = []
@@ -18,32 +11,40 @@ def sorted_base_on_density(graph):
         for neighbor in vertex.neighbors:
             vertex.density += graph.weights[(vertex.id, neighbor.id)] * neighbor.weight
             dens.append(vertex)
+
     # Sort the vertex base on density
     return sorted(dens, key = lambda vertex: vertex.density, reverse = True)
 
 
+def initialPartion(graph):
 
-def initialPartion(graph, k):
-# # Line 1
-#     for i in range(N):
-#         cluster[i] = None
-#     graph = sorted_based_on_density(graph)
-#     seed = cluster_id = 1
-# # Line 5
-#     while cluster_id <= k and seed <= N:
-#         while cluster[seed] not None:
-#             seed += 1
+    N = len(graph.vertices)
 
-#         cluster = growCluster(graph, cluster, cluster_id,seed, 0.8*(N/k)) # 80% node will be assign to a cluster
-#         cluster_id += 1
+    dens = sorted_base_on_density(graph) # a list of vertex sorted base on density (Desc = True)
+    seed_index = 0
 
-#     for i in range(N): # the remaining 20% node will be chosen randomly
-#         if cluster[i] == None:
-#             cluster[i] = rand(1, k)
-#     return cluster
-    
-    graph_weights = graph.get_dict_of_weights() 
-    dens = sorted_base_on_density(graph)
+    for i in range(graph.K):
 
+        # select the seed that not in a cluster yet
+        while graph.vertex_in_cluster[dens[seed_index].id] is not None: 
+            seed_index += 1
 
+        if seed_index >= N:
+            break
+
+        if graph.cluster[i] is None:
+            graph.cluster[i].id = i
+            graph.cluster[i] = growCluster( graph,
+                                            graph.cluster[i],
+                                            dens[seed_index], 
+                                            growSize = 0.8 * N /graph.K)
+        
+    for i in range(N, 0, -1):
+        if graph.vertex_in_cluster[dens[i].id] is None:
+            j = random.randrange(0, graph.K)
+            graph.cluster[j].add_vertex(dens[i]) 
+            graph.vertex_in_cluster[dens[i].id] = j  
+
+    return graph.cluster
+ 
 
