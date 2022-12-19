@@ -2,11 +2,12 @@ from graph import *
 
 def growCluster(graph, cluster, seed, growSize): 
 
-    graph.vertex_in_cluster[seed.id] = cluster.id # assign the seed to the current cluster
+    graph.vertex_in_cluster[seed.id] = cluster # assign the seed to the current cluster
     cluster.add_vertex(seed)
     i = 0
     # Create a do-while loop with i
     while True: 
+        
         if i >= growSize:
             break
 
@@ -17,7 +18,7 @@ def growCluster(graph, cluster, seed, growSize):
         with vertices in current cluster (Wij)
         ''' 
         for v in graph.vertices: 
-            if v not in cluster.vertices and graph.vertex_in_cluster[v.id] <= 0:
+            if v not in cluster.vertices and (v.id not in graph.vertex_in_cluster.keys()):
                 v_weight = 0
                 for cluster_v in cluster.vertices:    
                     if (v.id, cluster_v.id) in graph.weights:
@@ -29,7 +30,7 @@ def growCluster(graph, cluster, seed, growSize):
         if max_weight == 0:
             return cluster
         # Add the max_vertex to the cluster 
-        graph.vertex_in_cluster[max_vertex.id] = cluster.id
+        graph.vertex_in_cluster[max_vertex.id].id = cluster.id
         cluster.add_vertex(max_vertex)
 
         i += 1 

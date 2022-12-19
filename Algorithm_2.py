@@ -40,10 +40,10 @@ def initialPartion(graph):
                                             growSize = 0.8 * N /graph.K)
         
     for i in range(N, 0, -1):
-        if graph.vertex_in_cluster[dens[i].id] is None:
+        if dens[i].id not in graph.vertex_in_cluster.keys():
             j = random.randrange(0, graph.K)
             graph.cluster[j].add_vertex(dens[i]) 
-            graph.vertex_in_cluster[dens[i].id] = j  
+            graph.vertex_in_cluster[dens[i].id] = graph.cluster[j] 
 
     return graph.cluster
  
