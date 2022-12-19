@@ -70,7 +70,7 @@ class Graph:
 
 		self.weights = {} # a dictionary to store weight(value) correspond to its edge(key_v - (from, to_v))
 						
-		self.vertex_in_cluster = {}		# a dictionary with key is a vertex_id and value is its cluster_id it belongs to
+		self.vertex_in_cluster = {}		# a dictionary with key is a vertex_id and value is its cluster it belongs to
 
 		self.K = K # number of clusters
 		self.cluster = [] * K
@@ -113,66 +113,73 @@ class Graph:
 				adj_vertices.append(e.from_vertex)
 		return adj_vertices
 
-	def get_weight_with_from_to(self, from_vertex_id, to_vertex_id):
-		for e in self.edges:
-			if e.from_vertex.id == from_vertex_id and e.to_vertex.id == to_vertex_id:
-				return e.get_weight()
-
 class Cluster(Graph):
 	def __init__(self, id) -> None:
-		Graph.__init__(self)
+		super().__init__()
 		self.id = id
 
-	# dict_wegihts: a dictionary with key is an edge(from_vertex.id, to_vertex.id) and value is its weight
-
-	def get_cluster_weight(self, dict_weights):
+	def get_cluster_weight(self):
 		weight = 0
 	#	self.weights = self.get_dict_of_weights()
 		for i in range(len(self.vertices)):
 			for j in range(i + 1, len(self.vertices)):
-				if (self.vertices[i].id, self.vertices[j].id) in dict_weights:
-					weight += dict_weights[(self.vertices[i].id, self.vertices[j].id)]
+				if (self.vertices[i].id, self.vertices[j].id) in self.weights:
+					weight += self.weights[(self.vertices[i].id, self.vertices[j].id)]
 		return weight*2
 
-	def get_vertex_weight(self, vertex, dict_weights):
+	def get_vertex_weight(self, vertex):
 		weight = 0
 		for v in self.vertices:
 			if v.id == vertex.id:
 				for v1 in self.vertices:
-					if (v.id, v1.id) in dict_weights:
-						weight += dict_weights[(v.id, v1.id)]
+					if (v.id, v1.id) in self.weights:
+						weight += self.weights[(v.id, v1.id)]
 		return weight
-			
-
+	
+	def remove(self, vertex):
+		# remove vertex
+		self.vertices.remove(vertex)
+		# remove edge and weights
+		for i in range(len(self.edges)):
+			if self.edges[i].from_vertex.id == vertex.id or \
+				self.edges[i].to_vertex.id == vertex.id: 
+					self.weights.pop((self.edges[i].from_vertex.id, self.edges[i].to_vertex.id))
+					self.weights.pop((self.edges[i].to_vertex.id, self.edges[i].from_vertex.id))
+					self.edges.remove(self.edges[i])
+					
+	def add(self, vertex, graph):
+		# add to vertices
+		self.vertices.append(vertex)
+		# add all possible edges and weights
+		keys = graph.weights.keys()
+		for v in self.vertices:
+			if (v.id, vertex.id) in keys:
+				self.edges.append(Edge(v, vertex, graph.weights[(v.id, vertex.id)])) # add edge
+				self.weights[(v.id, vertex.id)] = graph.weights[(v.id, vertex.id)] # add weight
+	
+		
+		
 
 def main():
 	graph = load_graphs('cube_data.txt')
 	cluster = Cluster(Graph)
-	cluster.add_vertex(Vertex('2'))
-	cluster.add_vertex(Vertex('4'))
-	cluster.add_vertex(Vertex('6'))
-	cluster.add_edge(Edge(Vertex('2'), Vertex('4'), 3))
-	cluster.add_edge(Edge(Vertex('4'), Vertex('6'), 3))
+	v1 = Vertex('6')
+	v2 = Vertex('4')
+	v3 = Vertex('2')
+	cluster.add_vertex(v1)
+	cluster.add_vertex(v2)
+	cluster.add_vertex(v3)
+	e1 = Edge(v1, v2 , 3)
+	e2 = Edge(v2, v3 ,3)
+	cluster.add_edge(e1)
+	cluster.add_edge(e2)
 	# graph.get_dict_of_weights()
 	# cluster.get_dict_of_weights()
 	
-	print(graph.weights)
-
-	 # Equation: dens(i) = multyplying the neighbor nod's total weight (Mj) by the edge weight(Wij) connecting to that neighbor +	
-	dens = []
-    # Calculate density for each vertex
-	for vertex in graph.vertices: 
-		for neighbor in vertex.neighbors:
-			vertex.density += graph.weights[(vertex.id, neighbor.id)] * neighbor.weight
-		dens.append(vertex)
-    # Sort the vertex base on density
-	dens = sorted(dens, key = lambda vertex: vertex.density, reverse = True)
-
-	print(len(dens), 'ok\n')
-	for v in dens:
-		print(v.id, v.density)
-	print(graph.weights[('1', '2')])
-	print(graph.vertices[0].neighbors[0].id)
+	# print(graph.weights)
+	# print(cluster.weights)
+	for v in cluster.vertices:
+		print(v.neighbors)
 
 if __name__ == "__main__":
 	main()
