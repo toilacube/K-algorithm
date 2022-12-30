@@ -73,7 +73,7 @@ class Graph:
 		self.vertex_in_cluster = {}		# a dictionary with key is a vertex_id and value is its cluster it belongs to
 
 		self.K = K # number of clusters
-		self.cluster = [] * K
+		self.cluster = [Cluster] * K
 
 	def add_vertex(self, vertex):
 		self.vertices.append(vertex)
@@ -162,7 +162,7 @@ class Cluster(Graph):
 
 def main():
 	graph = load_graphs('cube_data.txt')
-	cluster = Cluster(Graph)
+	cluster = Cluster(graph)
 	v1 = Vertex('6')
 	v2 = Vertex('4')
 	v3 = Vertex('2')
@@ -178,6 +178,8 @@ def main():
 	
 	# print(graph.weights)
 	# print(cluster.weights)
+	for k in vars(cluster):
+		print(k)
 	for v in cluster.vertices:
 		print(v.neighbors)
 

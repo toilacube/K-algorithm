@@ -1,9 +1,10 @@
 # https://github.com/toilacube/K-algorithm.git
+# https://github.com/uef-machine-learning/gclu
 
 import numpy as np
 import csv
 import random
-
+import sys
 
 
 def read_data(filename):
@@ -32,6 +33,8 @@ def load_graphs(filename):
                          to_vertex = graph.get_vertex(id = line[2]),
                          weight = int(line[3]))
                 graph.add_edge(edge = e) 
+            elif line[0] == 'k':
+                graph.update_K(int(line[1]))
     return graph
 
 class Vertex:
@@ -56,7 +59,7 @@ class Edge:
     
 class Graph: 
     # edges, vertices = [], []
-    def __init__(self, K = 1) -> None:
+    def __init__(self, K = 1):
         self.edges = []
         self.vertices = []
 
@@ -65,7 +68,11 @@ class Graph:
         self.vertex_in_cluster = {}		# a dictionary with key is a vertex_id and value is its cluster it belongs to
 
         self.K = K # number of clusters
-        self.cluster = [Cluster] * K
+        self.cluster = [None] * K
+
+    def update_K(self, k):
+        self.K = k
+        self.cluster = [None] * k
 
     def add_vertex(self, vertex):
         self.vertices.append(vertex)
@@ -107,7 +114,7 @@ class Graph:
 
 class Cluster(Graph):
     def __init__(self, id = -1):
-        Graph().__init__()
+        super().__init__()
         self.id = id
 
     def get_cluster_weight(self):
@@ -118,26 +125,22 @@ class Cluster(Graph):
                 if (self.vertices[i].id, self.vertices[j].id) in self.weights:
                     weight += self.weights[(self.vertices[i].id, self.vertices[j].id)]
         return weight*2
-
-    def get_vertex_weight(self, vertex):
-        weight = 0
-        for v in self.vertices:
-            if v.id == vertex.id:
-                for v1 in self.vertices:
-                    if (v.id, v1.id) in self.weights:
-                        weight += self.weights[(v.id, v1.id)]
-        return weight
     
     def remove(self, vertex):
         # remove vertex
         self.vertices.remove(vertex)
         # remove edge and weights
-        for i in range(len(self.edges)):
+        i = 0
+        
+        while i < len(self.edges):
             if self.edges[i].from_vertex.id == vertex.id or \
                 self.edges[i].to_vertex.id == vertex.id: 
-                    self.weights.pop((self.edges[i].from_vertex.id, self.edges[i].to_vertex.id))
-                    self.weights.pop((self.edges[i].to_vertex.id, self.edges[i].from_vertex.id))
-                    self.edges.remove(self.edges[i])
+                    if (self.edges[i].from_vertex.id, self.edges[i].to_vertex.id) in self.weights:
+                        self.weights.pop((self.edges[i].from_vertex.id, self.edges[i].to_vertex.id))
+                        self.weights.pop((self.edges[i].to_vertex.id, self.edges[i].from_vertex.id))
+                        self.edges.remove(self.edges[i])
+            i += 1
+
 
     def add(self, vertex, graph):
         # add to vertices
@@ -148,6 +151,7 @@ class Cluster(Graph):
             if (v.id, vertex.id) in keys:
                 self.edges.append(Edge(v, vertex, graph.weights[(v.id, vertex.id)])) # add edge
                 self.weights[(v.id, vertex.id)] = graph.weights[(v.id, vertex.id)] # add weight
+                self.weights[(vertex.id, v.id)] = graph.weights[(vertex.id, v.id)]
 
 
 
@@ -160,8 +164,11 @@ class Cluster(Graph):
 def cost_function(clus1, clus2, cost_weight):
     weight1 = clus1.get_cluster_weight()
     weight2 = clus2.get_cluster_weight()
+    weight1 = weight1 if weight1 > 0 else 1 # when weight = 0 (cluster have only 1 node)
+    weight2 = weight2 if weight2 > 0 else 1 # when weight = 0 (cluster have only 1 node)
     cost1 = cost_weight[clus1.id]
     cost2 = cost_weight[clus2.id]
+    print(f'cost1: {cost1}, cost2: {cost2}, weight1: {weight1}, weight2: {weight2} ')
     return 1/(weight1 - cost1) + 1/(weight2 + cost2) - 1/weight1 - 1/weight2
 
 def K_Algorithm(graph):
@@ -171,16 +178,15 @@ def K_Algorithm(graph):
         Return: Cluster, type: list of Cluster object
     '''
 
-# Line 1	
     N = len(graph.vertices)
-    print(N)
     cluster = initialPartion(graph) # list of Clusters, but still only use graph.clusters
     changed = 0
     cost_weight = {} # a dict with keys are K cluster_id, values are weights from a node to cluster i  
 
     zero = {}
     for i in range(graph.K):
-        zero[str(i)] = 0
+        zero[i] = 0
+        cost_weight[i] = 0
 
     # Create a list of N random unique values from 0 to N-1
     sample = random.sample(range(0, N), N) # why we have to do randomly? maybe about the probability
@@ -188,23 +194,39 @@ def K_Algorithm(graph):
     while True:
 
         for i in sample:
-            cost_weight = zero
+            # changed = 0
+            cost_weight.update(zero)
             bestdelta = float('inf')
-            new_clus_id = 1
+            new_clus_id = -1
             v = graph.vertices[i]
             old_clus_id = graph.vertex_in_cluster[v.id].id
 
             for neighbor in v.neighbors: # loop all connections of i to calculate Wxi for all cluster x
                 clus_id = graph.vertex_in_cluster[neighbor.id].id
-                cost_weight[clus_id] += 2*graph.weights[(neighbor.id, v.id)]
+                #cost_weight[clus_id] += 2*graph.weights[(neighbor.id, v.id)]
+                cost_weight[clus_id] += graph.weights[(neighbor.id, v.id)]
 
+            print(f'\nChoose vertex: {v.id}')
+            print('Current cluster: ', graph.vertex_in_cluster[v.id].id)
+            for cube in graph.vertex_in_cluster[v.id].vertices:
+                print(cube.id)
             for j in range(graph.K):
-                cost = cost_function (graph.vertex_in_cluster[v.id], graph.cluster[j], cost_weight)
-                if cost < bestdelta:
-                    bestdelta = cost
-                    new_clus_id = graph.cluster[j].id
+                if graph.vertex_in_cluster[v.id].id != graph.cluster[j].id:  
+                    print(f'considering clulster {graph.cluster[j].id} for vertex {v.id}: ')
+                    for cube in graph.cluster[j].vertices:
+                        print(cube.id)
+
+                    cost = cost_function (graph.vertex_in_cluster[v.id], graph.cluster[j], cost_weight)
+                    if cost < bestdelta:
+                        print(f'vertex {v.id} changed to cluster {j} ')
+                        print(f'previouse cluster cost: {bestdelta} \nchanged cluster cost: {cost}\n')
+                        bestdelta = cost
+                        new_clus_id = j #graph.cluster[j].id
+                    else:
+                        print('vertex stay')
 
             if new_clus_id != old_clus_id: # if node v change to better cluster
+
                 changed += 1
                 graph.vertex_in_cluster[v.id] = graph.cluster[new_clus_id] 
                 # delete node v from previous cluster 
@@ -212,11 +234,15 @@ def K_Algorithm(graph):
                 # add node v to current best cluster
                 graph.cluster[new_clus_id].add(v, graph)
 
-        if changed <= 0: # if all nodes dont change its cluster then finish
+        if changed >= 10: # if all nodes dont change its cluster then finish
             break
 
     return cluster 
 
+'''
+    dens return multiple same values 
+    status: fixed
+'''
 
 def sorted_base_on_density(graph) -> list: 
 
@@ -224,49 +250,49 @@ def sorted_base_on_density(graph) -> list:
     dens = []
 
     # Calculate density for each vertex
+    # print('list of vertices line 230')   =>>>> output is fine, not graph.vertices problem
+    # for v in graph.vertices:
+    #     print(v.id)
     for vertex in graph.vertices: 
         for neighbor in vertex.neighbors:
-            vertex.density += graph.weights[(vertex.id, neighbor.id)] * neighbor.weight
-            dens.append(vertex)
+            vertex.density += graph.weights[(vertex.id, neighbor.id)] * neighbor.weight 
+        dens.append(vertex)
 
     # Sort the vertex base on density
-    return sorted(dens, key = lambda vertex: vertex.density, reverse = True)
-
-
+    # sort func is fine, have checked before
+    return sorted(dens, key = lambda vertex: vertex.density, reverse = True) 
+    
 def initialPartion(graph):
     N = len(graph.vertices)
     dens = sorted_base_on_density(graph) # a list of vertex sorted base on density (Desc = True)
     seed_index = 0
-
     for i in range(graph.K):
-
         # select the seed that not in a cluster yet
-        while dens[seed_index].id in graph.vertex_in_cluster.keys():
+        while dens[seed_index].id in graph.vertex_in_cluster.keys() and seed_index < N - 1:
         #while graph.vertex_in_cluster[dens[seed_index].id] is not None: 
             seed_index += 1
-
         if seed_index >= N:
             break
-        print(type(graph.cluster[i]))
-        if graph.cluster[i].id == -1:
-            graph.cluster[i].id = i
-            graph.cluster[i] = growCluster( graph,
-                                            graph.cluster[i],
-                                            dens[seed_index], 
-                                            growSize = 0.8 * N /graph.K)
-        
-    for i in range(N, 0, -1):
+
+        graph.cluster[i] = Cluster()
+       # if graph.cluster[i].id == None:
+        graph.cluster[i].id = i
+        graph.cluster[i] = growCluster( graph,
+                                        graph.cluster[i],
+                                        dens[seed_index], 
+                                        growSize = int(0.8 * N /graph.K))
+
+    for i in range(N - 1, -1, -1): # for(int i = N - 1; i >= 0; i --)
         if dens[i].id not in graph.vertex_in_cluster.keys():
             j = random.randrange(0, graph.K)
-          #  print(type(graph.cluster[j]),"\n" ,type(dens[i]))
-            graph.cluster[j].add_vertex(dens[i]) 
+            graph.cluster[j].add(dens[i], graph) 
             graph.vertex_in_cluster[dens[i].id] = graph.cluster[j] 
+
     return graph.cluster
 
 def growCluster(graph, cluster, seed, growSize): 
-
     graph.vertex_in_cluster[seed.id] = cluster # assign the seed to the current cluster
-    cluster.add_vertex(seed)
+    cluster.add(seed, graph)
     i = 0
     # Create a do-while loop with i
     while True: 
@@ -290,21 +316,19 @@ def growCluster(graph, cluster, seed, growSize):
                     max_vertex = v
                     max_weight = v_weight
 
-        if max_weight == 0:
+        if max_weight == -1:
             return cluster
         # Add the max_vertex to the cluster 
-        graph.vertex_in_cluster[max_vertex.id].id = cluster.id
-        cluster.add_vertex(max_vertex)
+        graph.vertex_in_cluster[max_vertex.id] = cluster
+        cluster.add(max_vertex, graph)
 
         i += 1 
-
     return cluster    
 
 def main():
-    graph = Graph()
     graph = load_graphs('cube_data.txt')
-    cluster = K_Algorithm(graph)
-    print(cluster)
-
+    sys.stdout=open("out.txt","w") # write ouput into out.txt
+    clusters = K_Algorithm(graph)
+    sys.stdout.close()
 if __name__ == "__main__":
     main()
