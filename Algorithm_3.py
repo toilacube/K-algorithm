@@ -1,9 +1,9 @@
 from graph import *
 
-def growCluster(graph, cluster, seed, growSize): 
 
+def growCluster(graph, cluster, seed, growSize): 
     graph.vertex_in_cluster[seed.id] = cluster # assign the seed to the current cluster
-    cluster.add_vertex(seed)
+    cluster.add(seed, graph)
     i = 0
     # Create a do-while loop with i
     while True: 
@@ -27,14 +27,14 @@ def growCluster(graph, cluster, seed, growSize):
                     max_vertex = v
                     max_weight = v_weight
 
-        if max_weight == 0:
+        if max_weight == -1:
             return cluster
         # Add the max_vertex to the cluster 
-        graph.vertex_in_cluster[max_vertex.id].id = cluster.id
-        cluster.add_vertex(max_vertex)
+        graph.vertex_in_cluster[max_vertex.id] = cluster
+        cluster.add(max_vertex, graph)
 
         i += 1 
-
-    return cluster    
+        
+    return cluster      
 
         
