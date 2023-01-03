@@ -162,6 +162,11 @@ class Cluster(Graph):
     Wxi = sum of weights from node i to all possible node in cluster x; status: ok, use cost_weight {}
 '''
 def cost_function(clus1, clus2, cost_weight):
+    '''
+    clus1: current cluster
+    clus2: consider cluster
+    cost_weight: list of weight from consider node to each ith cluster
+    '''
     weight1 = clus1.get_cluster_weight()
     weight2 = clus2.get_cluster_weight()
     weight1 = weight1 if weight1 > 0 else 1 # when weight = 0 (cluster have only 1 node)
@@ -169,9 +174,17 @@ def cost_function(clus1, clus2, cost_weight):
     cost1 = cost_weight[clus1.id]
     cost2 = cost_weight[clus2.id]
     print(f'cost1: {cost1}, cost2: {cost2}, weight1: {weight1}, weight2: {weight2} ')
-    return 1/(weight1 - cost1) + 1/(weight2 + cost2) - 1/weight1 - 1/weight2
+    #return 1/(weight1 - cost1) + 1/(weight2 + cost2) - 1/weight1 - 1/weight2
+    return (1/(weight2 + cost2) - 1/weight2) - (1/weight1 - 1/(weight1 - cost1))
+
+def second_cost(clus1, clus2, cost_weight, vertex):
+    conduct1 = (vertex.weight - cost_weight[clus1.id])/ (vertex.weight)
+    conduct2 = (vertex.weight - cost_weight[clus2.id])/ (vertex.weight)
+    return conduct1 > conduct2
+    pass
 
 def K_Algorithm(graph):
+
 
     '''
         Arg: Graph, type: Graph object
@@ -192,13 +205,13 @@ def K_Algorithm(graph):
     sample = random.sample(range(0, N), N) # why we have to do randomly? maybe about the probability
 
     while True:
-
+        changed = 0
         for i in sample:
             # changed = 0
             cost_weight.update(zero)
             bestdelta = float('inf')
-            new_clus_id = -1
             v = graph.vertices[i]
+            new_clus_id = graph.vertex_in_cluster[v.id].id
             old_clus_id = graph.vertex_in_cluster[v.id].id
 
             for neighbor in v.neighbors: # loop all connections of i to calculate Wxi for all cluster x
@@ -212,9 +225,27 @@ def K_Algorithm(graph):
                 print(cube.id)
             for j in range(graph.K):
                 if graph.vertex_in_cluster[v.id].id != graph.cluster[j].id:  
-                    print(f'considering clulster {graph.cluster[j].id} for vertex {v.id}: ')
+                    print(f'\nconsidering clulster {graph.cluster[j].id} for vertex {v.id}: ')
                     for cube in graph.cluster[j].vertices:
                         print(cube.id)
+
+                    # cost = second_cost(graph.vertex_in_cluster[v.id], graph.cluster[j], cost_weight, v)
+                    # if cost:
+                    #     print(f'vertex {v.id} changed to cluster {j}: ')
+                    #     changed += 1
+                    #     new_clus_id = j
+                    #     # for cube in graph.cluster[old_clus_id].vertices:
+                    #     #     print(cube.id)
+                    #     graph.vertex_in_cluster[v.id] = graph.cluster[new_clus_id] 
+                    #     # delete node v from previous cluster 
+                    #     graph.cluster[old_clus_id].remove(v)
+                    #     # add node v to current best cluster
+                    #     graph.cluster[new_clus_id].add(v, graph)
+                    #     old_clus_id = j
+                    #     for cube in graph.cluster[j].vertices:
+                    #         print(cube.id)
+                    # else:
+                    #     print('vertex stay')
 
                     cost = cost_function (graph.vertex_in_cluster[v.id], graph.cluster[j], cost_weight)
                     if cost < bestdelta:
@@ -223,10 +254,9 @@ def K_Algorithm(graph):
                         bestdelta = cost
                         new_clus_id = j #graph.cluster[j].id
                     else:
-                        print('vertex stay')
-
+                      print(f'cost: {cost} ')  
+                      print('vertex stay')
             if new_clus_id != old_clus_id: # if node v change to better cluster
-
                 changed += 1
                 graph.vertex_in_cluster[v.id] = graph.cluster[new_clus_id] 
                 # delete node v from previous cluster 
@@ -234,7 +264,7 @@ def K_Algorithm(graph):
                 # add node v to current best cluster
                 graph.cluster[new_clus_id].add(v, graph)
 
-        if changed >= 10: # if all nodes dont change its cluster then finish
+        if changed <= 0: # if all nodes dont change its cluster then finish
             break
 
     return cluster 
@@ -327,8 +357,8 @@ def growCluster(graph, cluster, seed, growSize):
 
 def main():
     graph = load_graphs('cube_data.txt')
-    sys.stdout=open("out.txt","w") # write ouput into out.txt
+   # sys.stdout=open("out.txt","w") # write ouput into out.txt
     clusters = K_Algorithm(graph)
-    sys.stdout.close()
+    #sys.stdout.close()
 if __name__ == "__main__":
     main()
